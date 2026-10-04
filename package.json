@@ -1,0 +1,14 @@
+{
+  "name": "pi-skill-tool",
+  "version": "0.1.0",
+  "description": "Expose pi skills as a first-class model-callable tool with a compact prompt catalogue",
+  "type": "module",
+  "main": "src/extension.ts",
+  "pi": {
+    "package": true
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-coding-agent": "*",
+    "typebox": "*"
+  }
+}
