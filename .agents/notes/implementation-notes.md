@@ -12,8 +12,14 @@
 
 ## Deviations
 
-（空）
-
-## Deviations
-
 1. `package.json` 的 `"main": "src/extension.ts"` 不会被 pi package 发现：git 安装后扩展未加载（实测 `pi -p` 会话 toolsAdded 无 use_skill）。pi 的发现走 `pi.extensions` 路径数组（对照 `pi-tool-search/package.json`）。已改为 `pi.extensions: ["./src/extension.ts"]` 并保留 main。
+
+2. Feature playbook 的 subagent 委托未走：单文件 + spec 全锁定 + API 锚点已核实，实现由主线完成；review 分离改由 review-only 模型（gpt-6.1-sol）对 diff 的独立审查承担。
+
+## 验证记录（2026-10-04，全部实测）
+
+- 安装：`pi install git:github.com/toRolex/pi-skill-tool` 后 `use_skill` 在列、`list_skills` 消失（session toolsAdded）。
+- 目录覆写：probe 扩展挂 `before_provider_request` 抓真实 payload，`<skills>` 段为单行 `- name: description`，无 `<available_skills>`、无 `<location>`、user-only 不出现。
+- 正反用例：存在 skill 正文进工具结果且尾部有 `Arguments: potato`；不存在 → 一行 `not found` error；user-only → 一行 error 指向 `/skill:name`。
+- codemode 嵌套：嵌套 id 含 `/` 走 steering，session 出现 `custom_message`（customType skill_body，display false），主模型最终回复引用正文原句；直接调用不受影响（双份去重成立）。
+- 测试 fixture `~/.pi/agent/skills/test-user-only` 已删除。
