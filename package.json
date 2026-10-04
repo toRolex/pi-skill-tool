@@ -5,7 +5,8 @@
   "type": "module",
   "main": "src/extension.ts",
   "pi": {
-    "package": true
+    "package": true,
+    "extensions": ["./src/extension.ts"]
   },
   "peerDependencies": {
     "@earendil-works/pi-coding-agent": "*",

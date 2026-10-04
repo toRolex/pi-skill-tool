@@ -13,3 +13,7 @@
 ## Deviations
 
 （空）
+
+## Deviations
+
+1. `package.json` 的 `"main": "src/extension.ts"` 不会被 pi package 发现：git 安装后扩展未加载（实测 `pi -p` 会话 toolsAdded 无 use_skill）。pi 的发现走 `pi.extensions` 路径数组（对照 `pi-tool-search/package.json`）。已改为 `pi.extensions: ["./src/extension.ts"]` 并保留 main。
