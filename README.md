@@ -2,14 +2,13 @@
 
 **把 pi 的 skill 面改成 Claude Code 式：目录一行一条，调用只有一个工具。**
 
-pi 默认把 skill 列表硬编码成系统提示词里的 XML 块，每条带绝对路径，还配一个 `list_skills` 工具。这个扩展删掉这些，换成更省的形态：系统提示词里 `- name: description` 一行一条，调用靠单个 `use_skill` 工具，正文直接进模型上下文。
+pi 默认把 skill 列表硬编码成系统提示词里的 XML 块，每条带绝对路径，模型要用某个 skill 得自己去 read 文件。这个扩展换成更省的形态：系统提示词里 `- name: description` 一行一条，调用靠单个 `use_skill` 工具，正文直接进模型上下文。
 
 |  | pi 默认 | pi-skill-tool |
 |---|---|---|
-| 目录 | `<available_skills>` XML，三行一条，带绝对路径 | `- name: description` 单行 |
-| 发现 | `list_skills` 工具 + 文件扫描兜底 | 只靠系统提示词目录 |
+| 目录 | `<available_skills>` XML，三行一条，暴露绝对路径 | `- name: description` 单行，无路径 |
 | 调用 | 模型自己 read SKILL.md | `use_skill` 一步到位 |
-| 兜底扫描 | 有（绕过项目信任边界、正则假 YAML） | 无，拿不到权威数据就明确失败 |
+| codemode 嵌套 | 正文随脚本结果丢失 | 经 steering 消息注入会话，主模型可见 |
 
 ## 安装
 
