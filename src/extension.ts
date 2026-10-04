@@ -51,12 +51,14 @@ function invocable(skills: SkillInfo[]): SkillInfo[] {
 }
 
 function compactCatalogue(skills: SkillInfo[]): string {
+  // Frontmatter descriptions may be multi-line; the catalogue is one line per skill.
+  const oneLine = (s: string) => s.replace(/\s*\r?\n\s*/g, " ").trim();
   const lines = [
     "The following skills provide specialized instructions for specific tasks.",
     "Use the use_skill tool to load a skill's full instructions when the task matches its description; do not read skill files manually.",
     "",
   ];
-  for (const s of skills) lines.push(`- ${s.name}: ${s.description}`);
+  for (const s of skills) lines.push(`- ${oneLine(s.name)}: ${oneLine(s.description)}`);
   return lines.join("\n");
 }
 
