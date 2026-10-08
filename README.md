@@ -8,7 +8,7 @@ pi 默认把 skill 列表硬编码成系统提示词里的 XML 块，每条带�
 |---|---|---|
 | 目录 | `<available_skills>` XML，三行一条，暴露绝对路径 | `- name: description` 单行，无路径 |
 | 调用 | 模型自己 read SKILL.md | `use_skill` 一步到位 |
-| codemode 嵌套 | 正文随脚本结果丢失 | 经 steering 消息注入会话，主模型可见 |
+| codemode 嵌套 | 结果只交给调用工具，不自动进入会话 | 经 steering 消息注入会话，主模型可见 |
 
 ## 安装
 
@@ -26,11 +26,12 @@ use_skill(skill: string, args?: string)
 
 - **正文直达**。工具结果就是 SKILL.md 全文，模型不用再去读文件。
 - **可选 `args`**。传了就在正文尾部追加 `Arguments: <args>` 一行，skill 正文自己声明怎么消费。
-- **错误是一行话**。不存在的名字返回 `Skill "x" not found.`，不倾倒可用列表；user-only 的 skill 返回一行指向 `/skill:name`。
+- **显式名称加载**。`disable-model-invocation: true` 的 skill 不出现在自动发现目录，但已知名称仍可通过 `use_skill` 加载。
+- **错误是一行话**。不存在的名字返回 `Skill "x" not found.`，不倾倒可用列表。文件读取失败返回对应错误。
 
 ### codemode 里也能用
 
-codemode 脚本内嵌套调用时，工具结果进不了主模型上下文。扩展会把正文经 steering 消息注入会话，主模型照样看得到，和直接调用去重：
+codemode 脚本内嵌套调用时，Pi 不自动把嵌套工具结果写入会话。扩展把正文经 steering 消息注入会话，嵌套结果仅返回确认信息。同一次调用不会同时通过两条路径交付正文：
 
 ```js
 // codemode 脚本内
@@ -41,17 +42,24 @@ return await tools.use_skill({ skill: "grilling" })
 
 ## 设计要点
 
-- **数据只有一个来源**：`before_agent_start` 事件里的 `systemPromptOptions.skills`。不做任何文件扫描，user-only（`disable-model-invocation: true`）的 skill 不进目录也不可被模型调用。
+- **数据只有一个来源**：`before_agent_start` 事件里的 `systemPromptOptions.skills`。不做任何文件扫描。`disable-model-invocation: true` 只影响自动发现目录，不阻止 `use_skill` 按名称加载。
+- **显式加载语义**。Pi 原生通过 `/skill:name` 显式加载隐藏的 skill。本扩展也允许通过 `use_skill` 显式加载，不改变 Pi 的命令行为。
 - **提示词覆写是段级的**：只替换 `<skills>…</skills>` 段，没有这个段就原样返回，不凭空注入。
 - **缓存按会话隔离**：以 sessionManager 对象为键的 `WeakMap`，同 cwd 开多个会话互不覆盖。
 - **嵌套调用靠 id 识别**：pi 的 `ctx.executeTool` 给嵌套调用的 id 是 `<calling id>/<n>`，据此区分交付路径。
 
 ## 兼容性
 
-- pi 1.0.2，作为 pi package 安装（`pi.extensions` 声明路径）。
+- 初始安装实测 pi 1.0.2。本次注册工具回归测试使用 pi 1.1.0，通过 `pi.extensions` 声明入口。
 - peerDependencies 只声明 host 供给的 `typebox` 与 `@earendil-works/pi-coding-agent`，git 安装无 vendored 断链风险。
+
+## 验证
+
+已安装 Pi 且 `pi` 在 PATH 中时，运行 `npm test`。测试也可直接解析本地安装的 `@earendil-works/pi-coding-agent`。
+
+测试通过 Pi 的扩展加载器注册真实 `use_skill` 工具，验证显式加载、目录过滤、错误结果、会话隔离与嵌套调用的正文交付。不需要模型请求。
 
 ## 相关
 
-- 设计与验证记录在 [`reference/skill-tool-legacy.ts`](reference/skill-tool-legacy.ts)（旧实现参照）和 `.agents/notes/`（spec 与过程 notes）。
+- [`reference/skill-tool-legacy.ts`](reference/skill-tool-legacy.ts) 和早期 `.agents/notes/` 保留旧行为的历史记录，包括拒绝加载 user-only skill。当前行为以 `src/extension.ts`、本 README 和回归测试为准。
 - 架构参照 Claude Code 的 Skill 工具与 [@luan.sh/pi-skills](https://github.com/luan/agents/blob/main/harnesses/pi/agent/packages/pi-skills/README.md)。
