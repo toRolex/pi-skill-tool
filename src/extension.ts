@@ -104,8 +104,8 @@ export default function (pi: ExtensionAPI) {
       "Use when a task matches a skill's description, instead of reading the skill file manually.",
     promptSnippet: "Load a skill's full instructions by name",
     promptGuidelines: [
-      "The system prompt's skills section lists every model-invokable skill; use use_skill to load one when the task matches its description.",
-      "Do not use use_skill for skills marked user-only; the tool reports them as unavailable.",
+      "The system prompt's skills section lists skills available for automatic discovery; use use_skill to load one when the task matches its description.",
+      "Skills hidden by disable-model-invocation are omitted from the catalogue but can still be loaded by explicit name.",
     ],
     parameters: Type.Object({
       skill: Type.String({ description: "Name of the skill to load" }),
@@ -123,14 +123,9 @@ export default function (pi: ExtensionAPI) {
         );
       }
 
-      const target = invocable(catalogue).find((s) => s.name === params.skill);
+      const target = catalogue.find((s) => s.name === params.skill);
       if (!target) {
-        const userOnly = catalogue.find((s) => s.name === params.skill);
-        return errorResult(
-          userOnly
-            ? `Skill "${params.skill}" is user-only (disable-model-invocation); ask the user to invoke it via /skill:${params.skill}.`
-            : `Skill "${params.skill}" not found.`,
-        );
+        return errorResult(`Skill "${params.skill}" not found.`);
       }
 
       let body: string;

@@ -4,6 +4,9 @@
   "description": "Expose pi skills as a first-class model-callable tool with a compact prompt catalogue",
   "type": "module",
   "main": "src/extension.ts",
+  "scripts": {
+    "test": "node --test tests/extension.test.mjs"
+  },
   "pi": {
     "package": true,
     "extensions": ["./src/extension.ts"]
